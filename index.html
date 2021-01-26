@@ -262,13 +262,15 @@ new Vue({
   data() {
     return {
       // url: '', // 在线链接
-      url: 'https://github.com/Momo707577045/m3u8-downloader', // 在线链接
+      // url: 'https://github.com/Momo707577045/m3u8-downloader', // 在线链接
+      url: 'https://github.com/octalmage/robotjs/tree/additional-function-keys/src', // 在线链接
       tips: 'github 特定文件夹下载工具', // 顶部提示
       downloading: false, // 是否下载中
       errorNum: 0, // 错误数
       finishNum: 0, // 已下载数
       downloadIndex: 0, // 当前下载文件
       fileInfoList: [], // 文件信息数组
+      branchList: [], // 分支列表，tag 列表，commit 列表
       projectInfo: { // 项目信息
         ownerName: '',
         projectName: '',
@@ -325,6 +327,28 @@ new Vue({
       xhr.send(null);
     },
 
+    // 获取分支及标签
+    getBranchAndTags(ownerName, projectName, callback) {
+      let branchList = []
+      this.ajax({
+        url: `https://api.github.com/repos/${ownerName}/${projectName}/branches`,
+        success: (treeStr) => {
+          branchList = [...branchList, ...JSON.parse(treeStr)]
+          this.ajax({
+            url: `https://api.github.com/repos/${ownerName}/${projectName}/tags`,
+            success: (treeStr) => {
+              branchList = [...branchList, ...JSON.parse(treeStr)]
+              branchList.forEach(item => this.branchList.push(item.name))
+              console.log(this.branchList)
+              callback && callback()
+            },
+            fail: _ => this.alertError('链接不正确，请查看链接是否有效')
+          })
+        },
+        fail: _ => this.alertError('链接不正确，请查看链接是否有效')
+      })
+    },
+
     // 获取 git tree
     getFileList() {
       if (!this.url) {
@@ -342,20 +366,22 @@ new Vue({
       this.projectInfo.ownerName = pathParams[0]
       this.projectInfo.projectName = pathParams[1]
       this.projectInfo.branchName = pathParams[2] || 'master'
+      // https://github.com/octalmage/robotjs/tree/dependabot/npm_and_yarn/bl-3.0.1/test/integration
+      // https://api.github.com/repos/octalmage/robotjs/git/trees/better-tests?recursive=1
+      // /tree/better-tests/src
 
-      //       url: 'https://api.github.com/repos/Momo707577045/m3u8-downloader/git/trees/master?recursive=1',
-      //             https://raw.githubusercontent.com/Momo707577045/m3u8-downloader/master/README.md
-
-      this.ajax({
-        url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/git/trees/${this.projectInfo.branchName}?recursive=1`,
-        success: (treeStr) => {
-          JSON.parse(treeStr).tree.forEach(item => item.type !== 'tree' && this.fileInfoList.push(item))
-          console.log(this.fileInfoList)
-          this.downloadFile()
-        },
-        fail: () => {
-          this.alertError('链接不正确，请查看链接是否有效')
-        }
+      this.getBranchAndTags(this.projectInfo.ownerName, this.projectInfo.projectName, () => {
+        this.ajax({
+          url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/git/trees/${this.projectInfo.branchName}?recursive=1`,
+          success: (treeStr) => {
+            JSON.parse(treeStr).tree.forEach(item => item.type !== 'tree' && this.fileInfoList.push(item))
+            console.log(this.fileInfoList)
+            // this.downloadFile()
+          },
+          fail: () => {
+            this.alertError('链接不正确，请查看链接是否有效')
+          }
+        })
       })
     },
 
@@ -412,7 +438,7 @@ new Vue({
       }
     },
 
-    // 处理 ts 文件，AES 解密、mp4 转码
+    // 处理文件
     dealFile(file, index, callback) {
       this.fileInfoList[index].fileData = file
       this.fileInfoList[index].status = 'finish'
@@ -447,9 +473,9 @@ new Vue({
       this.tips = 'git 文件整合中，请留意浏览器下载'
       const zip = new JSZip()
       this.fileInfoList.forEach(item => item.status === 'finish' && zip.file(item.path, item.fileData))
-      zip.generateAsync({ type: 'blob' }).then(function (content) {
+      zip.generateAsync({ type: 'blob' }).then((content) => {
         let a = document.createElement('a')
-        a.download = 'example.zip'
+        a.download = `${this.projectInfo.projectName}.zip`
         a.href = URL.createObjectURL(content)
         a.style.display = 'none'
         document.body.appendChild(a)
