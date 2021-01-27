@@ -151,23 +151,44 @@
     text-align: left;
   }
   .m-p-segment .item {
-    display: inline-block;
+    position: relative;
     margin: 10px 6px;
-    width: 50px;
+    width: 100%;
     height: 40px;
     color: white;
     line-height: 40px;
-    text-align: center;
+    text-align: left;
     border-radius: 4px;
-    cursor: help;
+    box-sizing: border-box;
     border: solid 1px #eeeeee;
     background-color: #dddddd;
+    overflow: hidden;
   }
-  .m-p-segment .finish {
+  .m-p-segment .item .status, .m-p-segment .item .content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    transition: width 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+  .m-p-segment .item .content {
+    width: 100%;
+    z-index: 2;
+  }
+  .m-p-segment .item .content span {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+  }
+  .m-p-segment .finish .status {
+    width: 100%;
     background-color: #0ACD76;
   }
-  .m-p-segment .error {
+  .m-p-segment .error .status {
     cursor: pointer;
+    width: 100%;
     background-color: #DC5350;
   }
   .m-p-cross, .m-p-final {
@@ -223,7 +244,7 @@
   <!--文件载入-->
   <div class="m-p-temp-url">测试链接：https://github.com/Momo707577045/m3u8-downloader</div>
   <section class="m-p-input-container">
-    <input type="text" v-model="url" :disable="downloading" placeholder="请输入 m3u8 链接">
+    <input type="text" v-model="url" :disable="downloading" :readonly="downloading" placeholder="请输入 m3u8 链接">
     <div class="" v-if="!downloading" @click="getFileList" :class="{'disable':downloading}">下载</div>
   </section>
 
@@ -234,20 +255,23 @@
     <div class="m-p-tips">碎片总量：{{ fileInfoList.length }}，已下载：{{ finishNum }}，错误：{{ errorNum }}，进度：{{ (finishNum / fileInfoList.length * 100).toFixed(2) }}%</div>
     <div class="m-p-tips">若某视频碎片下载发生错误，将标记为红色，可点击相应图标进行重试</div>
     <section class="m-p-segment">
-      <div class="item" v-for="(item, index) in fileInfoList" :class="[item.status]" :title="item.title" @click="retry(index)">{{ index + 1 }}</div>
+      <div class="item" v-for="(item, index) in fileInfoList" :class="[item.status]" @click="retry(index)" :title="item.path">
+        <div class="status"></div>
+        <div class="content"><span>{{ index + 1 }}</span> {{ item.absoluteUrl }}</div>
+      </div>
     </section>
   </template>
 </section>
 </body>
 
 <script>
-var _hmt = _hmt || [];
-(function () {
-  var hm = document.createElement("script");
-  hm.src = "https://hm.baidu.com/hm.js?1f12b0865d866ae1b93514870d93ce89";
-  var s = document.getElementsByTagName("script")[0];
-  s.parentNode.insertBefore(hm, s);
-})();
+// var _hmt = _hmt || [];
+// (function () {
+//   var hm = document.createElement("script");
+//   hm.src = "https://hm.baidu.com/hm.js?1f12b0865d866ae1b93514870d93ce89";
+//   var s = document.getElementsByTagName("script")[0];
+//   s.parentNode.insertBefore(hm, s);
+// })();
 </script>
 <!--vue 前端框架-->
 <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
@@ -262,9 +286,6 @@ new Vue({
   data() {
     return {
       url: '', // 在线链接
-      // url: 'https://github.com/Momo707577045/m3u8-downloader', // 在线链接
-      // url: 'https://github.com/octalmage/robotjs/tree/additional-function-keys/src', // 在线链接
-      // url: 'https://github.com/lezram/developers-download-helper-chrome/tree/dependabot/npm_and_yarn/bestzip-2.1.7/src/model', // 在线链接
       tips: 'github 特定文件夹下载工具', // 顶部提示
       downloading: false, // 是否下载中
       errorNum: 0, // 错误数
@@ -379,12 +400,13 @@ new Vue({
         this.ajax({
           url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/git/trees/${this.projectInfo.branchName}?recursive=1`,
           success: (treeStr) => {
-            JSON.parse(treeStr).tree.forEach(item =>
-              item.path.indexOf(this.projectInfo.dirPath) === 0 // 过滤特定数组
-              && item.type !== 'tree' // 不是树节点，只收集文件
-              && this.fileInfoList.push(item) // 收集
-            )
-            console.log(this.fileInfoList)
+            JSON.parse(treeStr).tree.forEach(item => {
+              if (item.path.indexOf(this.projectInfo.dirPath) === 0 && item.type !== 'tree') { //  // 过滤特定数组 不是树节点，只收集文件
+                item.absoluteUrl = `https://raw.githubusercontent.com/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/${this.projectInfo.branchName}/${item.path}`
+                item.status = '' // 待下载状态
+                this.fileInfoList.push(item) // 收集
+              }
+            })
             this.downloadFile()
           },
           fail: () => {
@@ -401,7 +423,6 @@ new Vue({
         let index = this.downloadIndex
         this.downloadIndex++
         if (this.fileInfoList[index] && !this.fileInfoList[index].status) {
-          this.fileInfoList[index].absoluteUrl = `https://raw.githubusercontent.com/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/${this.projectInfo.branchName}/${this.fileInfoList[index].path}` // 文件绝对地址
           this.ajax({
             url: this.fileInfoList[index].absoluteUrl,
             type: 'file',
@@ -458,13 +479,13 @@ new Vue({
 
     // 重新下载所有错误文件
     retryAll() {
+      this.errorNum = 0
+      this.downloadIndex = 0
       this.fileInfoList.forEach((item) => { // 重置所有文件状态
         if (item.status === 'error') {
           item.status = ''
         }
       })
-      this.errorNum = 0
-      this.downloadIndex = 0
       this.downloadFile()
     },
 
