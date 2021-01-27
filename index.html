@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta name="keywords" content="m3u8 downloader for web">
-  <meta name="description" content="git directory downloader for web, Momo's Blog, LuckyMomo">
-  <title>git directory downloader</title>
+  <meta name="description" content="GitHub directory downloader for web, Momo's Blog, LuckyMomo">
+  <title>GitHub directory downloader</title>
   <style>
   /*全局设置*/
   html, body {
@@ -76,14 +76,17 @@
     bottom: 30px;
   }
   /*顶部信息录入*/
-  .m-p-temp-url {
+  .m-p-temp-url, .m-p-intro {
     padding-top: 50px;
-    padding-bottom: 10px;
+    padding-bottom: 6px;
     width: 100%;
     color: #999999;
     text-align: left;
     font-style: italic;
     word-break: break-all;
+  }
+  .m-p-intro {
+    padding-top: 0;
   }
   .m-p-input-container {
     display: flex;
@@ -238,14 +241,15 @@
   <!--顶部操作提示-->
   <section class="m-p-action g-box">{{tips}}</section>
   <a class="m-p-help" target="_blank" href="https://segmentfault.com/a/1190000021847172">?</a>
-  <a class="m-p-github" target="_blank" href="https://github.com/Momo707577045/m3u8-downloader">github</a>
+  <a class="m-p-github" target="_blank" href="https://github.com/Momo707577045/git-dir-downloader">github</a>
   <a class="m-p-other" target="_blank" href="http://blog.luckly-mjw.cn/tool-show/index.html">其他实用工具</a>
 
   <!--文件载入-->
-  <div class="m-p-temp-url">测试链接：https://github.com/Momo707577045/m3u8-downloader</div>
+  <div class="m-p-temp-url">测试链接：https://github.com/Momo707577045/m3u8-downloader/tree/master/imgs</div>
+  <div class="m-p-intro">支持特定分支，特定 tags 下的文件夹或具体文件，解决 GitHub 只能下载整个项目的问题。直接拷贝当前页面链接至本页面，点击下载</div>
   <section class="m-p-input-container">
-    <input type="text" v-model="url" :disable="downloading" :readonly="downloading" placeholder="请输入 m3u8 链接">
-    <div class="" v-if="!downloading" @click="getFileList" :class="{'disable':downloading}">下载</div>
+    <input type="text" v-model="url" :disable="downloading" :readonly="downloading" placeholder="请输入 GitHub 当前页面链接">
+    <div class="" v-if="!downloading" @click="getFileList" :class="{'disable':downloading}">解析下载</div>
   </section>
 
   <template v-if="fileInfoList.length > 0">
@@ -276,7 +280,7 @@
 <!--vue 前端框架-->
 <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
 <!--js 生成压缩包-->
-<script src="./jszip.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.5.0/jszip.js"></script>
 
 <script>
 // script注入
@@ -286,8 +290,9 @@ new Vue({
   data() {
     return {
       url: '', // 在线链接
-      tips: 'github 特定文件夹下载工具', // 顶部提示
+      tips: 'GitHub 「特定」文件夹或文件下载工具', // 顶部提示
       downloading: false, // 是否下载中
+      isBlob: false, // 输入的链接是否是具体文件，而不是文件夹
       errorNum: 0, // 错误数
       finishNum: 0, // 已下载数
       downloadIndex: 0, // 当前下载文件
@@ -351,12 +356,16 @@ new Vue({
 
     // 获取分支及标签
     checkBranchAndTags(branchAndPath, callback) {
-      console.log(branchAndPath)
       if (!branchAndPath) {
         callback()
         return
       }
-      branchAndPath = branchAndPath.replace('tree/', '') // 去除无用参数
+      if (branchAndPath.indexOf('blob/') === 0) {
+        this.isBlob = true
+        branchAndPath = branchAndPath.replace('blob/', '') // 去除无用参数
+      } else {
+        branchAndPath = branchAndPath.replace('tree/', '') // 去除无用参数
+      }
       let branchList = []
       this.ajax({
         url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/branches`,
@@ -397,22 +406,31 @@ new Vue({
       this.projectInfo.ownerName = pathParams.shift()
       this.projectInfo.projectName = pathParams.shift()
       this.checkBranchAndTags(pathParams.join('/'), () => {
-        this.ajax({
-          url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/git/trees/${this.projectInfo.branchName}?recursive=1`,
-          success: (treeStr) => {
-            JSON.parse(treeStr).tree.forEach(item => {
-              if (item.path.indexOf(this.projectInfo.dirPath) === 0 && item.type !== 'tree') { //  // 过滤特定数组 不是树节点，只收集文件
-                item.absoluteUrl = `https://raw.githubusercontent.com/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/${this.projectInfo.branchName}/${item.path}`
-                item.status = '' // 待下载状态
-                this.fileInfoList.push(item) // 收集
-              }
-            })
-            this.downloadFile()
-          },
-          fail: () => {
-            this.alertError('链接不正确，请查看链接是否有效')
-          }
-        })
+        if (this.isBlob) { // 下载特定文件
+          this.fileInfoList = [{
+            status: '', // 待下载状态
+            path: this.projectInfo.dirPath,
+            absoluteUrl: `https://raw.githubusercontent.com/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/${this.projectInfo.branchName}/${this.projectInfo.dirPath}`,
+          }]
+          this.downloadFile()
+        } else { // 下载特定文件夹
+          this.ajax({
+            url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/git/trees/${this.projectInfo.branchName}?recursive=1`,
+            success: (treeStr) => {
+              JSON.parse(treeStr).tree.forEach(item => {
+                if (item.path.indexOf(this.projectInfo.dirPath) === 0 && item.type !== 'tree') { //  // 过滤特定数组 不是树节点，只收集文件
+                  item.absoluteUrl = `https://raw.githubusercontent.com/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/${this.projectInfo.branchName}/${item.path}`
+                  item.status = '' // 待下载状态
+                  this.fileInfoList.push(item) // 收集
+                }
+              })
+              this.downloadFile()
+            },
+            fail: () => {
+              this.alertError('链接不正确，请查看链接是否有效')
+            }
+          })
+        }
       })
     },
 
@@ -518,7 +536,7 @@ new Vue({
     alertError(tips) {
       alert(tips)
       this.downloading = false
-      this.tips = 'github 特定文件夹下载工具';
+      this.tips = 'GitHub 特定文件夹或文件下载工具';
     },
 
     // 拷贝剪切板
