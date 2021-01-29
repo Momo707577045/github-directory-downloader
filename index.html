@@ -178,6 +178,9 @@
   .m-p-segment .item .content {
     width: 100%;
     z-index: 2;
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
   }
   .m-p-segment .item .content span {
     display: inline-block;
@@ -241,7 +244,7 @@
   <!--顶部操作提示-->
   <section class="m-p-action g-box">{{tips}}</section>
   <a class="m-p-help" target="_blank" href="https://segmentfault.com/a/1190000021847172">?</a>
-  <a class="m-p-github" target="_blank" href="https://github.com/Momo707577045/git-dir-downloader">github</a>
+  <a class="m-p-github" target="_blank" href="https://github.com/Momo707577045/github-directory-downloader">github</a>
   <a class="m-p-other" target="_blank" href="http://blog.luckly-mjw.cn/tool-show/index.html">其他实用工具</a>
 
   <!--文件载入-->
@@ -269,13 +272,13 @@
 </body>
 
 <script>
-// var _hmt = _hmt || [];
-// (function () {
-//   var hm = document.createElement("script");
-//   hm.src = "https://hm.baidu.com/hm.js?1f12b0865d866ae1b93514870d93ce89";
-//   var s = document.getElementsByTagName("script")[0];
-//   s.parentNode.insertBefore(hm, s);
-// })();
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?1f12b0865d866ae1b93514870d93ce89";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
 </script>
 <!--vue 前端框架-->
 <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
@@ -339,7 +342,7 @@ new Vue({
         xhr.responseType = 'arraybuffer';
       }
 
-      xhr.onreadystatechange = function () {
+      xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
           let status = xhr.status;
           if (status >= 200 && status < 300) {
@@ -374,7 +377,8 @@ new Vue({
           this.ajax({
             url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/tags`,
             success: (treeStr) => {
-              [...branchList, ...JSON.parse(treeStr)].map(item => item.name).some(branch => {
+              [...branchList, ...JSON.parse(treeStr), { name: 'master' }].map(item => item.name).some(branch => {
+                console.log(branch)
                 if (branchAndPath.indexOf(branch) === 0) { // 寻找匹配的分支与 tag
                   this.projectInfo.branchName = branch
                   this.projectInfo.dirPath = branchAndPath.replace(branch, '').replace('/', '') // 去除首个 '/'
