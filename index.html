@@ -403,8 +403,10 @@ new Vue({
         alert('资源下载中，请稍后')
         return
       }
+
       this.downloading = true
       this.tips = 'git tree 文件下载中，请稍后'
+      this.url = decodeURIComponent(this.url)
       const pathParams = this.url.replace('https://github.com/', '').trim().split('/')
       this.projectInfo.branchName = 'master'
       this.projectInfo.ownerName = pathParams.shift()
