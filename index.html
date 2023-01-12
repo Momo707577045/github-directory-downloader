@@ -235,6 +235,10 @@
   .m-p-force:hover, .m-p-retry:hover {
     opacity: 0.9;
   }
+  .m-p-input-container input[disabled="disabled"]{
+    background-color: #f2f2f2;
+    cursor: not-allowed;
+  }
 
   </style>
 </head>
@@ -251,7 +255,7 @@
   <div class="m-p-temp-url">测试链接：https://github.com/Momo707577045/m3u8-downloader/tree/master/imgs</div>
   <div class="m-p-intro">支持特定分支，特定 tags 下的文件夹或具体文件，解决 GitHub 只能下载整个项目的问题。直接拷贝当前页面链接至本页面，点击下载</div>
   <section class="m-p-input-container">
-    <input type="text" v-model="url" :disable="downloading" :readonly="downloading" placeholder="请输入 GitHub 当前页面链接">
+    <input type="text" v-model="url" :disabled="downloading" :readonly="downloading" placeholder="请输入 GitHub 当前页面链接">
     <div class="" v-if="!downloading" @click="getFileList" :class="{'disable':downloading}">解析下载</div>
   </section>
 
