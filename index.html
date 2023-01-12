@@ -408,10 +408,10 @@ new Vue({
       this.tips = 'git tree 文件下载中，请稍后'
       this.url = decodeURIComponent(this.url)
       const pathParams = this.url.replace('https://github.com/', '').trim().split('/')
-      this.projectInfo.branchName = 'master'
-      this.projectInfo.ownerName = pathParams.shift()
-      this.projectInfo.projectName = pathParams.shift()
-      this.checkBranchAndTags(pathParams.join('/'), () => {
+      this.projectInfo.ownerName = pathParams[0]
+      this.projectInfo.projectName = pathParams[1]
+      this.projectInfo.branchName = pathParams[3]
+      this.checkBranchAndTags(pathParams.splice(0, 2).join('/'), () => {
         if (this.isBlob) { // 下载特定文件
           this.fileInfoList = [{
             status: '', // 待下载状态
