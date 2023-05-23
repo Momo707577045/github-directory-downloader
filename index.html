@@ -385,7 +385,7 @@ new Vue({
                 console.log(branch)
                 if (branchAndPath.indexOf(branch) === 0) { // 寻找匹配的分支与 tag
                   this.projectInfo.branchName = branch
-                  this.projectInfo.dirPath = branchAndPath.replace(branch, '').replace('/', '') // 去除首个 '/'
+                  this.projectInfo.dirPath = branchAndPath.replace(branch, '').replace('/', '') + '/' // 去除首个 '/'
                 }
               })
               console.log(this.projectInfo)
@@ -415,7 +415,7 @@ new Vue({
       this.projectInfo.ownerName = pathParams[0]
       this.projectInfo.projectName = pathParams[1]
       this.projectInfo.branchName = pathParams[3]
-      this.checkBranchAndTags(pathParams.splice(0, 2).join('/'), () => {
+      this.checkBranchAndTags(pathParams.slice(2).join('/'), () => {
         if (this.isBlob) { // 下载特定文件
           this.fileInfoList = [{
             status: '', // 待下载状态
