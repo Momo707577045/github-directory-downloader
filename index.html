@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <meta name="keywords" content="m3u8 downloader for web">
+  <meta name="keywords" content="GitHub directory for web">
   <meta name="description" content="GitHub directory downloader for web, Momo's Blog, LuckyMomo">
   <title>GitHub directory downloader</title>
   <style>
@@ -285,9 +285,9 @@ var _hmt = _hmt || [];
 })();
 </script>
 <!--vue 前端框架-->
-<script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+<script src="https://upyun.luckly-mjw.cn/lib/vue.js"></script>
 <!--js 生成压缩包-->
-<script src="https://cdn.bootcdn.net/ajax/libs/jszip/3.5.0/jszip.js"></script>
+<script src="https://upyun.luckly-mjw.cn/lib/jszip.js"></script>
 
 <script>
 // script注入
@@ -297,6 +297,9 @@ new Vue({
   data() {
     return {
       url: '', // 在线链接
+      // url: 'https://github.com/SetoSkins/Old_SetoThermal/blob/main/install.sh', // 文件在线链接
+      // url: 'https://github.com/SetoSkins/Old_SetoThermal/blob/main/mods/01_8100/files/service.sh', // 文件在线链接
+      // url: 'https://github.com/Momo707577045/m3u8-downloader/tree/master/imgs', // 文件夹在线链接
       tips: 'GitHub 「特定」文件夹或文件下载工具', // 顶部提示
       downloading: false, // 是否下载中
       isBlob: false, // 输入的链接是否是具体文件，而不是文件夹
@@ -382,10 +385,10 @@ new Vue({
             url: `https://api.github.com/repos/${this.projectInfo.ownerName}/${this.projectInfo.projectName}/tags`,
             success: (treeStr) => {
               [...branchList, ...JSON.parse(treeStr), { name: 'master' }].map(item => item.name).some(branch => {
-                console.log(branch)
                 if (branchAndPath.indexOf(branch) === 0) { // 寻找匹配的分支与 tag
                   this.projectInfo.branchName = branch
-                  this.projectInfo.dirPath = branchAndPath.replace(branch, '').replace('/', '') + '/' // 去除首个 '/'
+                  this.projectInfo.dirPath = branchAndPath.replace(branch, '').replace('/', '') + (this.isBlob ? '' : '/') // 去除首个 '/'
+                  return true
                 }
               })
               console.log(this.projectInfo)
