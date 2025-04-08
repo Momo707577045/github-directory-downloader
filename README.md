@@ -1,5 +1,6 @@
 ## [工具在线地址](http://blog.luckly-mjw.cn/tool-show/github-directory-downloader/index.html)，推荐使用 chrome 浏览器。
 
+
 ## 使用方式
 
 * 打开想要下载的 github 文件夹，如 facebook 的 react-dom 文件夹，则打开该页面。
@@ -48,3 +49,7 @@
 * 项目只是简单的功能组合，都比较简单。
 * 代码没有做优化，理解思路，看看就好。
 ![](http://upyun.luckly-mjw.cn/Assets/github-directory-downloader/007.jpeg)
+
+## 欢迎加入社区交流群
+
+![界面](./imgs/tools.png) 
